@@ -8,10 +8,18 @@ const path = require('path');
 const dotenv = require('dotenv');
 dotenv.config()
 
+// import router
+const authRouter = require('./src/Router/authRouter')
+const postRouter = require('./src/Router/postRouter')
+const userRouter = require('./src/Router/userRouter')
+
 const app = express();
 const PORT = process.env.PORT || 4001;
 
 // Routes use
+app.use('/api', authRouter)
+app.use('/api', postRouter)
+app.use('/api', userRouter)
 
 app.use(express.json());
 app.use(cors());

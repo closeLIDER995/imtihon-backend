@@ -26,7 +26,7 @@ const userSchema = new mongoose.Schema(
       minlength: 6,
     },
     profileImage: {
-      type: String, 
+      type: String,
       default: '',
     },
     follower: {
@@ -43,9 +43,14 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    role: {
+      type: Number,
+      enum: [100, 101],
+      default: 100
+    }
   },
   {
-    timestamps: true, 
+    timestamps: true,
   }
 );
 
