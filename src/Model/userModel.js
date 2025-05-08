@@ -5,7 +5,6 @@ const userSchema = new mongoose.Schema(
     username: {
       type: String,
       required: true,
-      unique: true,
       minlength: 3,
       maxlength: 30,
     },
@@ -23,7 +22,7 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
-      minlength: 6,
+      minlength: 4,
     },
     profileImage: {
       type: String,
@@ -45,8 +44,16 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: Number,
-      enum: [100, 101],
+      enum: [100, 101], // 100 = user , 101 = admin
       default: 100
+    },
+    job: {
+      type: String,
+      default: ''
+    },
+    hobby: {
+      type: String,
+      default: ''
     }
   },
   {

@@ -7,9 +7,13 @@ const postSchema = new mongoose.Schema(
             ref: 'User',
             required: true,
         },
-        postImage: {
+        content: {
             type: String,
             default: '',
+        },
+        postImage: {
+            type: Object,
+            default: {}
         },
         likes: [
             {

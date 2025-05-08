@@ -1,42 +1,51 @@
 const bcrypt = require('bcrypt');
 const JWT = require('jsonwebtoken');
-const User = require('../Model/UserModel');
+const User = require('../Model/userModel');
 
 const authCtrl = {
 
     signup: async (req, res) => {
         try {
-            const { username, surname, email, password, role } = req.body;
+            const { username, surname, email, password, role, profileImage, databirth, job, hobby } = req.body;
 
             if (!username || !surname || !email || !password) {
-                return res.status(400).json({ message: "barcha qatorlarni toldiring" });
+                return res.status(400).json({ message: "Barcha qatorlarni to‘ldiring" });
             }
 
             const userExists = await User.findOne({ $or: [{ email }, { username }] });
             if (userExists) {
-                return res.status(403).json({ message: "Email or username already exsits" });
+                return res.status(403).json({ message: "Email yoki username allaqachon mavjud" });
             }
 
-            const hashedPassword = await bcrypt.hash(password, 10);
+            const hashedPassword = await bcrypt.hash(password, 12); 
 
             const newUser = new User({
                 username,
                 surname,
                 email,
                 password: hashedPassword,
-                role: role,
-                profileImage: req.body.profileImage || '',
-                databirth: req.body.databirth || null
+                role: role || 100,
+                profileImage: profileImage || '',
+                databirth: databirth || null,
+                job: job || '',
+                hobby: hobby || ''
             });
 
             await newUser.save();
 
             const { password: _, ...userData } = newUser._doc;
 
+            const token = JWT.sign(
+                { id: newUser._id, role: newUser.role },
+                process.env.JWT_SECRET_KEY, 
+                { expiresIn: '12h' }
+            );
 
-            const token = JWT.sign({ id: newUser._id, role: newUser.role }, process.env.JWT_SECRET_KEY, { expiresIn: '12h' });
-
-            res.status(201).json({ message: "Signup sucssess", user: userData, token });
+            res.status(201).json({
+                message: "Ro‘yxatdan o‘tish muvaffaqiyatli",
+                user: userData,
+                token
+            });
 
         } catch (error) {
             console.log(error);
@@ -49,12 +58,12 @@ const authCtrl = {
             const { email, password } = req.body;
 
             if (!email || !password) {
-                return res.status(400).json({ message: "hamma qatorlarni toldiring" });
+                return res.status(400).json({ message: "Hamma qatorlarni to‘ldiring" });
             }
 
             const user = await User.findOne({ email });
             if (!user) {
-                return res.status(404).json({ message: "Email is not found" });
+                return res.status(404).json({ message: "Email topilmadi" });
             }
 
             const isMatch = await bcrypt.compare(password, user.password);
@@ -62,11 +71,19 @@ const authCtrl = {
                 return res.status(400).json({ message: "Parol noto‘g‘ri" });
             }
 
-            const { password: _, ...userData } = newUser._doc;
+            const { password: _, ...userData } = user._doc;
 
-            const token = JWT.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET_KEY, { expiresIn: '12h' });
+            const token = JWT.sign(
+                { id: user._id, role: user.role },
+                process.env.JWT_SECRET_KEY, 
+                { expiresIn: '12h' }
+            );
 
-            res.status(200).json({ message: "Login sucssess", user: userData, token });
+            res.status(200).json({
+                message: "Login muvaffaqiyatli",
+                user: userData,
+                token
+            });
 
         } catch (error) {
             console.log(error);

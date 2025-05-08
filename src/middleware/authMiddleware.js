@@ -1,20 +1,36 @@
-const JWT = require('jsonwebtoken');
-const User = require('../Model/UserModel');
+const jwt = require('jsonwebtoken');
+const User = require('../Model/userModel');
 
 const authMiddleware = async (req, res, next) => {
     try {
-        const token = req.headers.authorization?.split(' ')[1]; 
-        if (!token) {
+        const authHeader = req.headers.authorization; 
+
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
             return res.status(401).json({ message: "No token, authorization denied" });
         }
 
-        const decoded = JWT.verify(token, process.env.JWT_SECRET_KEY);
-        req.user = decoded; 
+        const token = authHeader.split(' ')[1]; 
+        if (!token) {
+            return res.status(401).json({ message: "Token not found" });
+        }
 
-        next();  
+        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+        if (!decoded || !decoded.id) {
+            return res.status(401).json({ message: "Token is not valid" });
+        }
+
+        const user = await User.findById(decoded.id).select('-password'); 
+        if (!user) {
+            return res.status(401).json({ message: "User not found" });
+        }
+
+        req.user = user; 
+        next(); 
+
+
     } catch (error) {
-        console.log(error);
-        res.status(401).json({ message: "Token is not valid" });
+        console.error("Auth Middleware Error:", error.message);
+        return res.status(401).json({ message: "Token is not valid or expired" });
     }
 };
 

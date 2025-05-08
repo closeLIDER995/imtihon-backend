@@ -16,16 +16,16 @@ const userRouter = require('./src/Router/userRouter')
 const app = express();
 const PORT = process.env.PORT || 4001;
 
-// Routes use
-app.use('/api', authRouter)
-app.use('/api', postRouter)
-app.use('/api', userRouter)
-
 app.use(express.json());
 app.use(cors());
 app.use(expressFileupload());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Routes use
+app.use('/api', authRouter)
+app.use('/api/post', postRouter)
+app.use('/api/user', userRouter)
 
 const MONGO_URL = process.env.MONGO_URL
 mongoose.connect(MONGO_URL).then(() => {
