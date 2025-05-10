@@ -29,7 +29,7 @@ const authMiddleware = async (req, res, next) => {
 
 
     } catch (error) {
-        console.error("Auth Middleware Error:", error.message);
+        console.error(error);
         return res.status(401).json({ message: "Token is not valid or expired" });
     }
 };
