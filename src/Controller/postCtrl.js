@@ -78,7 +78,29 @@ const postCtrl = {
             console.log(error);
             res.status(500).json({ message: error.message });
         }
-    }
+    },
+    likePost: async (req, res) => {
+        try {
+            const postId = req.params.id;
+            const userId = req.user._id;
+    
+            const post = await Post.findById(postId);
+            if (!post) return res.status(404).json({ message: "Post topilmadi" });
+    
+            if (post.likes.includes(userId)) {
+                post.likes.pull(userId);
+                await post.save();
+                return res.status(200).json({ message: "Unlike qilindi", post });
+            } else {
+                post.likes.push(userId);
+                await post.save();
+                return res.status(200).json({ message: "Like qilindi", post });
+            }
+        } catch (error) {
+            console.log(error);
+            res.status(500).json({ message: error.message });
+        }
+    },
 };
 
 module.exports = postCtrl;

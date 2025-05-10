@@ -6,15 +6,15 @@ const authCtrl = {
 
     signup: async (req, res) => {
         try {
-            const { username, surname, email, password, role, profileImage, databirth, job, hobby } = req.body;
+            const { username, surname, email, password, role } = req.body;
 
             if (!username || !surname || !email || !password) {
                 return res.status(400).json({ message: "Barcha qatorlarni to‘ldiring" });
             }
 
-            const userExists = await User.findOne({ $or: [{ email }, { username }] });
+            const userExists = await User.findOne({ email });
             if (userExists) {
-                return res.status(403).json({ message: "Email yoki username allaqachon mavjud" });
+                return res.status(403).json({ message: "Bu email allaqachon mavjud" });
             }
 
             const hashedPassword = await bcrypt.hash(password, 12); 
@@ -24,11 +24,7 @@ const authCtrl = {
                 surname,
                 email,
                 password: hashedPassword,
-                role: role || 100,
-                profileImage: profileImage || '',
-                databirth: databirth || null,
-                job: job || '',
-                hobby: hobby || ''
+                role: role || 100
             });
 
             await newUser.save();
