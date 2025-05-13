@@ -12,7 +12,7 @@ dotenv.config()
 const authRouter = require('./src/Router/authRouter')
 const postRouter = require('./src/Router/postRouter')
 const userRouter = require('./src/Router/userRouter')
-const imageRouter = require('./src/Router/imageRouter')
+const commentRouter = require('./src/Router/commentRouter')
 
 const app = express();
 const PORT = process.env.PORT || 4001;
@@ -27,7 +27,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api', authRouter)
 app.use('/api/post', postRouter)
 app.use('/api/user', userRouter)
-app.use('/api/image', imageRouter)
+app.use('/api/comment', commentRouter)
 
 const MONGO_URL = process.env.MONGO_URL
 mongoose.connect(MONGO_URL).then(() => {
