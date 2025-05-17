@@ -21,7 +21,7 @@ const notificationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Post',
       default: null,
-    },
+    },  
     isRead: {
       type: Boolean,
       default: false,
