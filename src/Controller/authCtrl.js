@@ -6,7 +6,7 @@ const authCtrl = {
 
     signup: async (req, res) => {
         try {
-            const { username, surname, email, password, role } = req.body;
+            const { username, surname, email, password } = req.body;
 
             if (!username || !surname || !email || !password) {
                 return res.status(400).json({ message: "Barcha qatorlarni to‘ldiring" });
@@ -24,7 +24,6 @@ const authCtrl = {
                 surname,
                 email,
                 password: hashedPassword,
-                role: role || 100
             });
 
             await newUser.save();

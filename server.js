@@ -39,14 +39,12 @@ app.use('/api', authRouter);
 app.use('/api/post', postRouter);
 app.use('/api/user', userRouter);
 app.use('/api/comment', commentRouter);
-app.use('/api/notlification', notlificationRouter);
+app.use('/api/notification', notlificationRouter);
 
 io.on('connection', (socket) => {
-  console.log('Socket connected:', socket.id);
 
   socket.on('join', (userId) => {
     onlineUsers.set(userId, socket.id);
-    console.log(`User ${userId} connected with socket ${socket.id}`);
   });
 
   socket.on('disconnect', () => {
@@ -56,7 +54,6 @@ io.on('connection', (socket) => {
         break;
       }
     }
-    console.log('Socket disconnected:', socket.id);
   });
 });
 
