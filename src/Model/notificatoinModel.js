@@ -21,7 +21,7 @@ const notificationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Post',
       default: null,
-    },  
+    },
     isRead: {
       type: Boolean,
       default: false,
@@ -29,7 +29,12 @@ const notificationSchema = new mongoose.Schema(
     commentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Comment',
-    }
+      default: null,
+    },
+    message: {
+      type: String,
+      required: true,
+    },
   },
   {
     timestamps: true,

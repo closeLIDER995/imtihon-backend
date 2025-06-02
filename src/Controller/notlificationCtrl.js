@@ -4,36 +4,43 @@ const User = require('../Model/userModel');
 const notificationCtrl = {
   createNotification: async (req, res) => {
     try {
-      const { type, senderId, receiverId, postId, commentId } = req.body;
+      const { type, senderId, receiverId, postId, commentId, message } = req.body;
 
-      if (!type || !senderId || !receiverId) {
-        return res.status(400).json({ message: 'Type, sender, and receiver are required.' });
+      if (!type || !senderId || !receiverId || !message) {
+        return res.status(400).json({ message: 'Type, senderId, receiverId va message majburiy!' });
       }
 
       if (senderId.toString() === receiverId.toString()) {
-        return res.status(400).json({ message: 'You cannot notify yourself.' });
+        return res.status(400).json({ message: "O'zingizga xabar yuborib bo'lmaydi!" });
+      }
+
+      const existingNotification = await Notification.findOne({
+        senderId,
+        receiverId,
+        type,
+        postId: postId || null,
+        commentId: commentId || null,
+      });
+
+      if (existingNotification) {
+        return res.status(200).json({ message: 'Bu notification allaqachon mavjud', notification: existingNotification });
       }
 
       const sender = await User.findById(senderId);
       const receiver = await User.findById(receiverId);
 
       if (!sender || !receiver) {
-        return res.status(404).json({ message: 'Sender or receiver not found.' });
+        return res.status(404).json({ message: 'Sender yoki receiver topilmadi!' });
       }
 
       if (type === 'follow') {
-        const alreadyFollowing = receiver.follower.includes(senderId);
-
-        if (!alreadyFollowing) {
-          receiver.follower.push(senderId);
-          sender.followed.push(receiverId);
-        } else {
-          receiver.follower = receiver.follower.filter(id => id.toString() !== senderId.toString());
-          sender.followed = sender.followed.filter(id => id.toString() !== receiverId.toString());
+        const isFollowing = receiver.followers.includes(senderId);
+        if (!isFollowing) {
+          receiver.followers.push(senderId);
+          sender.following.push(receiverId);
+          await receiver.save();
+          await sender.save();
         }
-
-        await receiver.save();
-        await sender.save();
       }
 
       const newNotification = new Notification({
@@ -42,7 +49,8 @@ const notificationCtrl = {
         receiverId,
         postId: postId || null,
         commentId: commentId || null,
-        isFollowing: type === 'follow' ? receiver.follower.includes(senderId) : false,
+        message,
+        isRead: false,
       });
 
       await newNotification.save();
@@ -52,28 +60,30 @@ const notificationCtrl = {
         .populate('postId', 'content postImage')
         .populate('commentId', 'content');
 
-      const receiverSocketId = global.onlineUsers?.get(receiverId.toString());
+      const receiverSocketId = global.onlineUsers.get(receiverId.toString());
       if (receiverSocketId) {
-        global._io.to(receiverSocketId).emit('newNotification', populatedNotification);
+        global._io.to(receiverSocketId).emit('newNotification', {
+          ...populatedNotification._doc,
+          createdAt: new Date(),
+        });
       }
 
       res.status(201).json(populatedNotification);
     } catch (err) {
       console.error('Create Notification Error:', err);
-      res.status(500).json({ message: 'Server error' });
+      res.status(500).json({ message: 'Serverda xatolik yuz berdi!' });
     }
   },
 
   getNotifications: async (req, res) => {
     try {
       const userId = req.params.userId;
-
       if (!userId) {
-        return res.status(400).json({ message: 'User ID is required.' });
+        return res.status(400).json({ message: 'User ID majburiy!' });
       }
 
       const notifications = await Notification.find({ receiverId: userId })
-        .populate('senderId', 'username profileImage follower followed')
+        .populate('senderId', 'username profileImage')
         .populate('postId', 'content postImage')
         .populate('commentId', 'content')
         .sort({ createdAt: -1 });
@@ -81,67 +91,63 @@ const notificationCtrl = {
       res.status(200).json(notifications);
     } catch (err) {
       console.error('Get Notifications Error:', err);
-      res.status(500).json({ message: 'Server error' });
+      res.status(500).json({ message: 'Xatolik yuz berdi!' });
     }
   },
 
   readNotification: async (req, res) => {
     try {
-      const { notificationId } = req.params;
-
-      const notification = await Notification.findById(notificationId);
+      const notificationId = req.params.id;
+      const notification = await Notification.findByIdAndUpdate(
+        notificationId,
+        { isRead: true },
+        { new: true }
+      );
 
       if (!notification) {
-        return res.status(404).json({ message: 'Notification not found' });
+        return res.status(404).json({ message: 'Notification topilmadi!' });
       }
 
-      notification.isRead = true;
-      await notification.save();
+      const receiverSocketId = global.onlineUsers.get(notification.receiverId.toString());
+      if (receiverSocketId) {
+        global._io.to(receiverSocketId).emit('notificationUpdated', {
+          notificationId: notification._id,
+          isRead: true,
+        });
+        console.log('Notification updated event emitted to:', receiverSocketId);
+      }
 
-      const updated = await Notification.findById(notificationId)
-        .populate('senderId', 'username profileImage follower followed')
-        .populate('postId', 'content postImage')
-        .populate('commentId', 'content');
-
-      res.status(200).json(updated);
+      res.status(200).json(notification);
     } catch (err) {
-      console.error('Mark Notification Read Error:', err);
-      res.status(500).json({ message: 'Server error' });
+      console.error('Read Notification Error:', err);
+      res.status(500).json({ message: 'Xatolik yuz berdi!' });
     }
   },
 
   deleteNotification: async (req, res) => {
     try {
-      const { notificationId } = req.params;
+      const notificationId = req.params.id;
+      const notification = await Notification.findByIdAndDelete(notificationId);
 
-      const notification = await Notification.findById(notificationId);
       if (!notification) {
-        return res.status(404).json({ message: 'Notification not found' });
+        return res.status(404).json({ message: 'Notification topilmadi!' });
       }
 
-      await notification.deleteOne();
-
-      res.status(200).json({ message: 'Notification deleted' });
+      res.status(200).json({ message: 'Notification o‘chirildi!' });
     } catch (err) {
       console.error('Delete Notification Error:', err);
-      res.status(500).json({ message: 'Server error' });
+      res.status(500).json({ message: 'Xatolik yuz berdi!' });
     }
   },
 
   deleteAllNotifications: async (req, res) => {
     try {
-      const { userId } = req.params;
-
-      if (!userId) {
-        return res.status(400).json({ message: 'User ID is required' });
-      }
-
+      const userId = req.params.userId;
       await Notification.deleteMany({ receiverId: userId });
-
-      res.status(200).json({ message: 'All notifications deleted' });
+      res.status(200).json({ message: 'Barcha notificationlar o‘chirildi!' });
     } catch (err) {
       console.error('Delete All Notifications Error:', err);
-      res.status(500).json({ message: 'Server error' });
+      res.status(500).json({ message: 'Xatolik yuz berdi!' });
     }
   },
 };
