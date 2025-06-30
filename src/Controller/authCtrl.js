@@ -37,13 +37,13 @@ const authCtrl = {
         token,
         user: userData
       });
+
+      console.log('✅ LOGIN BODY:', req.body);
     } catch (error) {
+      console.error('❌ Login xatolik:', error.message);
       res.status(500).json({ message: "Serverda xatolik: " + error.message });
     }
-    console.log('REQ.BODY LOGIN:', req.body);
-
   },
-  
 
   // 📝 SIGNUP
   signup: async (req, res) => {
@@ -55,7 +55,7 @@ const authCtrl = {
         surname,
         job,
         hobby,
-        role = 'user' // default if not passed
+        role = 'user'
       } = req.body;
 
       if (!username || !email || !password || !surname) {
@@ -75,12 +75,12 @@ const authCtrl = {
         return res.status(403).json({ message: "Bu username allaqachon mavjud" });
       }
 
-      // const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedPassword = await bcrypt.hash(password, 10);
 
       const newUser = new User({
         username,
         email,
-        password:
+        password: hashedPassword,
         surname,
         job,
         hobby,
@@ -105,10 +105,10 @@ const authCtrl = {
         user: userData
       });
     } catch (error) {
+      console.error('❌ Signup xatolik:', error.message);
       res.status(500).json({ message: "Serverda xatolik: " + error.message });
     }
   }
 };
-
 
 module.exports = authCtrl;
