@@ -1,6 +1,8 @@
 const bcrypt = require('bcryptjs');
 const JWT = require('jsonwebtoken');
-const User = require('../models/UserModel');
+const User = require('../Model/UserModel');
+
+const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY || "my_super_secret_key"
 
 const authCtrl = {
   signup: async (req, res) => {
@@ -45,36 +47,45 @@ const authCtrl = {
   login: async (req, res) => {
     try {
       const { email, password } = req.body;
-      
+
       if (!email || !password) {
-        return res.status(403).send({ message: "Please fill all fields" });
+        return res.status(403).json({ message: "Please fill all fields" });
       }
-      
-      const user = await User.findOne({ email });
+
+      // passwordni olish uchun .select('+password') yozilishi kerak
+      const user = await User.findOne({ email }).select('+password');
+
       if (!user) {
-        return res.status(400).send({ message: "Invalid email" });
+        return res.status(400).json({ message: "Invalid email" });
       }
-      
+
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
-        return res.status(400).send({ message: "Invalid password" });
+        return res.status(400).json({ message: "Invalid password" });
       }
-      
-      const { password: pw, ...userData } = user._doc;
-      
-      const token = JWT.sign(userData, JWT_SECRET_KEY, { expiresIn: "48h" });
-      
-      res.status(200).send({
+
+      // Parolni olib tashlaymiz
+      const userData = user.toObject();
+      delete userData.password;
+
+      const token = JWT.sign(
+        { id: user._id, role: user.role },
+        JWT_SECRET_KEY,
+        { expiresIn: "48h" }
+      );
+
+      res.status(200).json({
         message: "Login successful",
         user: userData,
-        token
+        token,
+        userId: user._id.toString()
       });
-      
     } catch (error) {
-      console.log(error);
-      res.status(500).send({ message: error.message });
+      console.error("Login error:", error.message);
+      res.status(500).json({ message: "Server error: " + error.message });
     }
   }
 };
+
 
 module.exports = authCtrl;
