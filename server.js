@@ -16,7 +16,7 @@ const server = http.createServer(app);
 // const FRONTEND_URL = 'https://shimmering-tanuki-4438d1.netlify.app';
 
 // === CORS SETUP ===
-const allowedOrigins = ["https://odil-bobur-app-post.netlify.app", 'http://localhost:3000'];
+const allowedOrigins = ["https://yakuniy-imtihon.netlify.app", 'http://localhost:3000'];
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
